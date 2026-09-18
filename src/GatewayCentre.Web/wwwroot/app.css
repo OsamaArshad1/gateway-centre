@@ -368,6 +368,8 @@ a:focus-visible, button:focus-visible, .gc-btn:focus-visible, input:focus-visibl
 }
 .topbar a { color: rgba(255, 255, 255, 0.85); }
 .topbar a:hover { color: #fff; text-decoration: none; }
+.topbar-contact-link { display: inline-flex; align-items: center; gap: 6px; }
+.topbar-contact-link svg { flex-shrink: 0; opacity: 0.9; }
 
 .site-header {
   position: sticky;
@@ -423,6 +425,14 @@ a:focus-visible, button:focus-visible, .gc-btn:focus-visible, input:focus-visibl
 .main-nav .nav-cta { color: #fff; }
 .main-nav .nav-cta:hover { color: #fff; }
 
+.nav-toggle-checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
 .menu-toggle {
   display: none;
   flex-direction: column;
@@ -459,9 +469,10 @@ a:focus-visible, button:focus-visible, .gc-btn:focus-visible, input:focus-visibl
     display: none;
     box-shadow: var(--shadow-md);
   }
-  .main-nav.open { display: flex; }
+  .nav-toggle-checkbox:checked ~ .main-nav { display: flex; }
   .main-nav .nav-cta { align-self: flex-start; }
   .topbar-inner { font-size: 0.74rem; }
+  .topbar .topbar-social { display: none; }
 }
 
 .site-footer {

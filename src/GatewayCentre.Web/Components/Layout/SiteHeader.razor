@@ -1,13 +1,18 @@
-@rendermode InteractiveServer
 @inject Services.SiteContentService SiteContent
 
 <div class="topbar">
     <div class="gc-container topbar-inner">
         <div class="gc-row gap-md wrap">
-            <a href="tel:@_settings.PrimaryPhone.Replace(" ", "")">📞 @_settings.PrimaryPhone</a>
-            <a href="mailto:@_settings.Email">✉ @_settings.Email</a>
+            <a href="tel:@_settings.PrimaryPhone.Replace(" ", "")" class="topbar-contact-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <span>@_settings.PrimaryPhone</span>
+            </a>
+            <a href="mailto:@_settings.Email" class="topbar-contact-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                <span>@_settings.Email</span>
+            </a>
         </div>
-        <SocialLinks />
+        <SocialLinks CssClass="topbar-social" />
     </div>
 </div>
 
@@ -23,32 +28,41 @@
             </span>
         </a>
 
-        <nav class="main-nav @(_menuOpen ? "open" : "")" aria-label="Primary">
-            <NavLink href="/" Match="Microsoft.AspNetCore.Components.Routing.NavLinkMatch.All" @onclick="Close">Home</NavLink>
-            <NavLink href="/services" @onclick="Close">Services</NavLink>
-            <NavLink href="/our-spaces" @onclick="Close">Our Spaces</NavLink>
-            <NavLink href="/packages" @onclick="Close">Packages</NavLink>
-            <NavLink href="/gallery" @onclick="Close">Gallery</NavLink>
-            <NavLink href="/about" @onclick="Close">About</NavLink>
-            <NavLink href="/contact" @onclick="Close">Location</NavLink>
-            <a href="/request-a-quote" class="gc-btn gc-btn-primary gc-btn-sm nav-cta" @onclick="Close">Request a Quote</a>
+        @* Pure CSS + vanilla-JS toggle (no server round-trip) so the menu works instantly,
+           including on the static GitHub Pages export which has no Blazor circuit at all. *@
+        <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" />
+
+        <nav class="main-nav" aria-label="Primary">
+            <NavLink href="/" Match="Microsoft.AspNetCore.Components.Routing.NavLinkMatch.All">Home</NavLink>
+            <NavLink href="/services">Services</NavLink>
+            <NavLink href="/our-spaces">Our Spaces</NavLink>
+            <NavLink href="/packages">Packages</NavLink>
+            <NavLink href="/gallery">Gallery</NavLink>
+            <NavLink href="/about">About</NavLink>
+            <NavLink href="/contact">Location</NavLink>
+            <a href="/request-a-quote" class="gc-btn gc-btn-primary gc-btn-sm nav-cta">Request a Quote</a>
         </nav>
 
-        <button class="menu-toggle" @onclick="Toggle" aria-label="Toggle menu" aria-expanded="@_menuOpen">
+        <label for="nav-toggle" class="menu-toggle" aria-label="Toggle menu">
             <span></span><span></span><span></span>
-        </button>
+        </label>
     </div>
 </header>
 
+<script>
+    document.querySelectorAll('.main-nav a').forEach(function (a) {
+        a.addEventListener('click', function () {
+            var cb = document.getElementById('nav-toggle');
+            if (cb) { cb.checked = false; }
+        });
+    });
+</script>
+
 @code {
-    private bool _menuOpen;
     private Models.SiteSettings _settings = new();
 
     protected override async Task OnInitializedAsync()
     {
         _settings = await SiteContent.GetSettingsAsync();
     }
-
-    private void Toggle() => _menuOpen = !_menuOpen;
-    private void Close() => _menuOpen = false;
 }
