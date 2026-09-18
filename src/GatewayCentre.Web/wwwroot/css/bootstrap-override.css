@@ -1,0 +1,31 @@
+/* Reskins Bootstrap (used only by the /Account Identity pages) to match the green/white brand. */
+:root {
+  --bs-primary: #0f6b52;
+  --bs-primary-rgb: 15, 107, 82;
+  --bs-link-color: #0f6b52;
+  --bs-link-color-rgb: 15, 107, 82;
+  --bs-link-hover-color: #0a4e3c;
+  --bs-body-font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+}
+
+body { background: #f7faf8; }
+
+.btn-primary {
+  --bs-btn-bg: #0f6b52;
+  --bs-btn-border-color: #0f6b52;
+  --bs-btn-hover-bg: #0a4e3c;
+  --bs-btn-hover-border-color: #0a4e3c;
+  --bs-btn-active-bg: #0a4e3c;
+  --bs-btn-active-border-color: #0a4e3c;
+  --bs-btn-focus-shadow-rgb: 15, 107, 82;
+}
+
+a { color: #0f6b52; }
+a:hover { color: #0a4e3c; }
+
+.form-control:focus {
+  border-color: #1a9975;
+  box-shadow: 0 0 0 0.25rem rgba(15, 107, 82, 0.18);
+}
+
+.text-danger { color: #b3261e !important; }

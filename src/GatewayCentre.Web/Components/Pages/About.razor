@@ -1,0 +1,90 @@
+@page "/about"
+@rendermode InteractiveServer
+
+<PageTitle>About Us — Gateway Centre</PageTitle>
+
+<section class="page-hero">
+    <div class="gc-container">
+        <span class="section-eyebrow" style="background:rgba(255,255,255,.16);color:#fff;">About Us</span>
+        <h1 style="color:#fff;">We Want To Give You The Best Service</h1>
+        <OrnamentDivider Light="true" />
+        <p style="color:rgba(255,255,255,.85);max-width:600px;">
+            We are dedicated to providing you with the best service possible, tailored to meet your unique needs and
+            ensure a seamless, memorable experience — from planning to execution.
+        </p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container grid grid-2" style="align-items:center;">
+        <div>
+            <span class="section-eyebrow">Our Promise</span>
+            <h2>Reliable, Detail-Focused Event Support</h2>
+            <p class="gc-text-muted">
+                Whether you're hosting an intimate walima or a 600-guest wedding reception, our team manages
+                the logistics — staging, seating, catering coordination, sound and parking — so you can focus
+                on your guests.
+            </p>
+            <div class="grid grid-2" style="margin-top:24px;">
+                <div class="highlight" style="text-align:left;">
+                    <div class="highlight-icon" style="margin:0 0 12px;">✓</div>
+                    <h3>Guaranteed Results</h3>
+                    <p class="gc-text-muted">Reliable service, expert planning, flawless execution — your satisfaction is guaranteed.</p>
+                </div>
+                <div class="highlight" style="text-align:left;">
+                    <div class="highlight-icon" style="margin:0 0 12px;">★</div>
+                    <h3>Quality Service</h3>
+                    <p class="gc-text-muted">Exceptional service, attention to detail, reliability, and client satisfaction.</p>
+                </div>
+            </div>
+        </div>
+        <ImageOrPlaceholder Alt="Gateway Centre team" CssClass="hall-image" PlaceholderLabel="Our Team" />
+    </div>
+</section>
+
+<section class="section" style="background:var(--color-surface);border-top:1px solid var(--color-border);">
+    <div class="gc-container">
+        <div class="section-header center">
+            <span class="section-eyebrow">FAQ</span>
+            <h2>Have Any Questions For Us?</h2>
+            <OrnamentDivider />
+            <p class="gc-text-muted">We're here to help — reach out any time for bookings, availability or facility questions.</p>
+        </div>
+
+        <div class="faq-list">
+            @foreach (var item in _faqs)
+            {
+                <div class="faq-item @(_openFaq == item.Question ? "open" : "")">
+                    <button type="button" class="faq-question" @onclick="() => Toggle(item.Question)">
+                        <span>@item.Question</span>
+                        <span class="faq-caret">@(_openFaq == item.Question ? "−" : "+")</span>
+                    </button>
+                    @if (_openFaq == item.Question)
+                    {
+                        <div class="faq-answer">@item.Answer</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private string? _openFaq;
+
+    private readonly List<(string Question, string Answer)> _faqs =
+    [
+        ("What is the seating capacity of your banquet halls?",
+         "Our Ground Floor Hall seats up to 600 guests, ideal for large weddings and corporate events. Our Second Floor Hall seats up to 400 guests, perfect for more intimate celebrations and formal occasions."),
+        ("Do you offer both indoor and outdoor event spaces?",
+         "Yes — both halls have flexible indoor layouts, and outdoor arrangements can be discussed depending on your event size and season. Let us know your preference when requesting a quote."),
+        ("Can we customize the décor to match our event theme?",
+         "Absolutely. Our team works with you on staging, floral arrangements and colour themes to match your vision — details you can specify on the quote request form."),
+        ("Do you have parking facilities available?",
+         "Yes, on-site parking is available for all events at Gateway Centre."),
+        ("Can we host both small gatherings and large celebrations?",
+         "Yes — our Second Floor Hall suits smaller, more intimate functions, while the Ground Floor Hall comfortably hosts large-scale weddings and conferences."),
+    ];
+
+    private void Toggle(string question) => _openFaq = _openFaq == question ? null : question;
+}

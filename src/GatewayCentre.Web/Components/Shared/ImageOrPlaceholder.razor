@@ -1,0 +1,24 @@
+@* Renders an image if a URL is set, otherwise a branded placeholder so pages never show a broken <img>. *@
+
+@if (!string.IsNullOrWhiteSpace(ImageUrl))
+{
+    <img src="@ImageUrl" alt="@Alt" class="@CssClass" loading="lazy" />
+}
+else
+{
+    <div class="@CssClass img-placeholder" role="img" aria-label="@Alt">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <circle cx="9" cy="10" r="1.6" />
+            <path d="M21 16l-5.2-5.2a1.5 1.5 0 0 0-2.1 0L4 20" />
+        </svg>
+        <span>@(string.IsNullOrWhiteSpace(PlaceholderLabel) ? "Photo coming soon" : PlaceholderLabel)</span>
+    </div>
+}
+
+@code {
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public string Alt { get; set; } = string.Empty;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public string? PlaceholderLabel { get; set; }
+}

@@ -1,0 +1,228 @@
+@page "/"
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject SiteContentService SiteContent
+
+<PageTitle>@_settings.SiteName — @_settings.Tagline</PageTitle>
+
+<section class="hero">
+    <div class="hero-decor" aria-hidden="true"></div>
+    <div class="hero-florals" aria-hidden="true">
+        <svg class="hero-branch hero-branch-tl" viewBox="0 0 220 220" width="180" height="180">
+            <g fill="none" stroke="var(--gc-gold-500)" stroke-width="1.4" opacity="0.55">
+                <path d="M10 10 Q60 40 70 100 Q76 140 110 170" />
+                <ellipse cx="40" cy="28" rx="16" ry="7" transform="rotate(35 40 28)" />
+                <ellipse cx="62" cy="66" rx="18" ry="8" transform="rotate(60 62 66)" />
+                <ellipse cx="72" cy="112" rx="16" ry="7" transform="rotate(95 72 112)" />
+                <ellipse cx="92" cy="150" rx="17" ry="7" transform="rotate(55 92 150)" />
+            </g>
+        </svg>
+        <svg class="hero-branch hero-branch-br" viewBox="0 0 220 220" width="180" height="180">
+            <g fill="none" stroke="var(--gc-gold-500)" stroke-width="1.4" opacity="0.55">
+                <path d="M210 210 Q160 180 150 120 Q144 80 110 50" />
+                <ellipse cx="180" cy="192" rx="16" ry="7" transform="rotate(35 180 192)" />
+                <ellipse cx="158" cy="154" rx="18" ry="8" transform="rotate(60 158 154)" />
+                <ellipse cx="148" cy="108" rx="16" ry="7" transform="rotate(95 148 108)" />
+                <ellipse cx="128" cy="70" rx="17" ry="7" transform="rotate(55 128 70)" />
+            </g>
+        </svg>
+    </div>
+    <div class="gc-container hero-inner">
+        <div class="hero-copy">
+            <span class="script-accent">Celebrate</span>
+            <span class="hero-label">Weddings &middot; Corporate &middot; Celebrations</span>
+            <h1>@_settings.HeroHeadline</h1>
+            <p class="hero-sub">@_settings.HeroSubheadline</p>
+            <div class="gc-row gap-md wrap" style="margin-top:28px;">
+                <a href="/request-a-quote" class="gc-btn gc-btn-primary">Request a Free Quote</a>
+                <a href="/our-spaces" class="gc-btn gc-btn-ghost">Explore Our Spaces</a>
+            </div>
+            <div class="hero-stats">
+                <div><strong>2</strong><span>Elegant Halls</span></div>
+                <div><strong>600+</strong><span>Guest Capacity</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-scallop">
+        <svg viewBox="0 0 1200 40" preserveAspectRatio="none">
+            <path d="M0 40 Q 30 0 60 40 T 120 40 T 180 40 T 240 40 T 300 40 T 360 40 T 420 40 T 480 40 T 540 40 T 600 40 T 660 40 T 720 40 T 780 40 T 840 40 T 900 40 T 960 40 T 1020 40 T 1080 40 T 1140 40 T 1200 40 V40 H0 Z" fill="var(--color-bg)" />
+        </svg>
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container">
+        <div class="section-header center">
+            <span class="section-eyebrow">Our Spaces</span>
+            <h2>Two Halls, Endless Possibilities</h2>
+            <OrnamentDivider />
+            <p class="gc-text-muted">From intimate gatherings to grand celebrations upto 600 guests, Gateway Centre has the right space for your event.</p>
+        </div>
+        <div class="grid grid-2">
+            @foreach (var hall in _halls)
+            {
+                <div class="gc-card hoverable">
+                    <ImageOrPlaceholder ImageUrl="@hall.ImageUrl" Alt="@hall.Name" CssClass="gc-card-img" PlaceholderLabel="@hall.Name" />
+                    <div class="gc-card-body">
+                        <span class="gc-badge">@hall.Floor &middot; Up to @hall.SeatingCapacity guests</span>
+                        <h3 style="margin-top:12px;">@hall.Name</h3>
+                        <p class="gc-text-muted">@hall.Description</p>
+                        <a href="/our-spaces" class="gc-btn gc-btn-outline gc-btn-sm">View Details</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="section" style="background:var(--color-primary-light);">
+    <div class="gc-container">
+        <div class="section-header center">
+            <span class="section-eyebrow">Packages</span>
+            <h2>Simple, Transparent Packages</h2>
+            <OrnamentDivider />
+            <p class="gc-text-muted">Every package includes a dedicated coordinator and full venue support — tailor it further with a custom quote.</p>
+        </div>
+        <div class="grid grid-3">
+            @foreach (var package in _packages)
+            {
+                <div class="gc-card hoverable @(package.IsFeatured ? "featured-card" : "")">
+                    <div class="gc-card-body">
+                        @if (package.IsFeatured)
+                        {
+                            <span class="gc-badge gold">Most Popular</span>
+                        }
+                        <h3 style="margin-top:10px;">@package.Name</h3>
+                        <p class="gc-text-muted">@package.Description</p>
+                        <p class="price">Rs. @package.StartingPriceRs.ToString("N0") <span>starting</span></p>
+                        <ul class="feature-list">
+                            @foreach (var feature in package.Features.Take(4))
+                            {
+                                <li>@feature</li>
+                            }
+                        </ul>
+                        <a href="/request-a-quote?packageId=@package.Id" class="gc-btn gc-btn-primary gc-btn-sm gc-btn-block">Request This Package</a>
+                    </div>
+                </div>
+            }
+        </div>
+        <div style="text-align:center;margin-top:32px;">
+            <a href="/packages" class="gc-btn gc-btn-outline">Compare All Packages</a>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container">
+        <div class="section-header center">
+            <span class="section-eyebrow">Why Gateway Centre</span>
+            <h2>We Want To Give You The Best Service</h2>
+            <OrnamentDivider />
+        </div>
+        <div class="grid grid-3">
+            <div class="highlight">
+                <div class="highlight-icon">✓</div>
+                <h3>Guaranteed Results</h3>
+                <p class="gc-text-muted">Reliable service, expert planning, and flawless execution — your satisfaction is guaranteed.</p>
+            </div>
+            <div class="highlight">
+                <div class="highlight-icon">★</div>
+                <h3>Quality Service</h3>
+                <p class="gc-text-muted">Exceptional attention to detail, reliability, and professionalism at every step.</p>
+            </div>
+            <div class="highlight">
+                <div class="highlight-icon">🍽</div>
+                <h3>Delicious Catering</h3>
+                <p class="gc-text-muted">Freshly prepared, generous menus your guests will be talking about long after the event.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (_testimonials.Count > 0)
+{
+    <section class="section" style="background:var(--color-primary-light);">
+        <div class="gc-container">
+            <div class="section-header center">
+                <span class="section-eyebrow">Testimonials</span>
+                <h2>What Our Guests Say</h2>
+                <OrnamentDivider />
+            </div>
+            <div class="grid grid-2">
+                @foreach (var t in _testimonials)
+                {
+                    <div class="gc-card testimonial-card">
+                        <div class="gc-card-body">
+                            <span class="quote-mark" aria-hidden="true">&ldquo;</span>
+                            <div class="stars">@(new string('★', t.Rating))@(new string('☆', 5 - t.Rating))</div>
+                            <p style="font-style:italic;">"@t.Quote"</p>
+                            <strong>@t.AuthorName</strong>
+                            @if (!string.IsNullOrWhiteSpace(t.EventType))
+                            {
+                                <span class="gc-text-muted event-type-accent"> @t.EventType</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<section class="section find-us-section">
+    <div class="gc-container find-us-grid">
+        <div>
+            <span class="section-eyebrow">Find Us</span>
+            <h2>Located in the Heart of Khanpur</h2>
+            <OrnamentDivider />
+            <p class="gc-text-muted">@_settings.Address</p>
+            <div class="gc-row gap-md wrap" style="margin-top:8px;">
+                <a href="@_settings.GoogleMapsDirectionsUrl" target="_blank" rel="noopener" class="gc-btn gc-btn-primary gc-btn-sm">Get Directions</a>
+                <a href="/contact" class="gc-btn gc-btn-outline gc-btn-sm">Full Contact Details</a>
+            </div>
+        </div>
+        <a href="@_settings.GoogleMapsDirectionsUrl" target="_blank" rel="noopener" class="find-us-map" aria-label="Open our location in Google Maps">
+            <iframe
+                title="Gateway Centre location"
+                src="@_settings.GoogleMapsEmbedUrl"
+                loading="lazy"
+                tabindex="-1"
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </a>
+    </div>
+</section>
+
+<section class="cta-band">
+    <div class="gc-container cta-band-inner">
+        <div>
+            <h2 style="color:#fff;">Ready to reserve your date?</h2>
+            <p style="color:rgba(255,255,255,.85);">Availability is limited — request a free, no-obligation quote today.</p>
+        </div>
+        <div class="stack" style="align-items:flex-start;gap:14px;">
+            <div class="gc-row gap-md wrap">
+                <a href="/request-a-quote" class="gc-btn gc-btn-primary" style="background:#fff;color:var(--gc-green-800);">Request a Quote</a>
+                <a href="@_settings.GoogleMapsDirectionsUrl" target="_blank" rel="noopener" class="gc-btn gc-btn-ghost">Get Directions</a>
+            </div>
+            <p style="color:rgba(255,255,255,.85);margin:0;">
+                Contact <a href="tel:+923201889473" style="color:#fff;font-weight:700;text-decoration:underline;">+92 320 1889473</a>
+            </p>
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<Hall> _halls = [];
+    private List<Package> _packages = [];
+    private List<Testimonial> _testimonials = [];
+    private Models.SiteSettings _settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _settings = await SiteContent.GetSettingsAsync();
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _halls = await db.Halls.Where(h => h.IsPublished).OrderBy(h => h.DisplayOrder).ToListAsync();
+        _packages = await db.Packages.Where(p => p.IsPublished).OrderBy(p => p.DisplayOrder).ToListAsync();
+        _testimonials = await db.Testimonials.Where(t => t.IsPublished).OrderBy(t => t.DisplayOrder).Take(4).ToListAsync();
+    }
+}

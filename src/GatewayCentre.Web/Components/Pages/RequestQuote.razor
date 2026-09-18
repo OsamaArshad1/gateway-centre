@@ -1,0 +1,216 @@
+@page "/request-a-quote"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject SiteContentService SiteContent
+
+<PageTitle>Request a Quote — Gateway Centre</PageTitle>
+
+<section class="page-hero">
+    <div class="gc-container">
+        <span class="section-eyebrow" style="background:rgba(255,255,255,.16);color:#fff;">Request a Quote</span>
+        <h1 style="color:#fff;">Tell Us About Your Event</h1>
+        <OrnamentDivider Light="true" />
+        <p style="color:rgba(255,255,255,.85);max-width:560px;">Share a few details and our team will get back to you with a tailored quote, usually within 24 hours.</p>
+        <p style="color:rgba(255,255,255,.85);margin-top:10px;">Prefer to talk? Call us at <a href="tel:+923201889473" style="color:#fff;font-weight:700;text-decoration:underline;">+92 320 1889473</a></p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container" style="max-width:720px;">
+        @if (_submitted)
+        {
+            <div class="gc-card">
+                <div class="gc-card-body" style="text-align:center;">
+                    <div class="highlight-icon" style="margin:0 auto 16px;">✓</div>
+                    <h2>Thank you, @_lastName!</h2>
+                    <p class="gc-text-muted">
+                        We've received your request for @_lastDate?.ToString("dd MMM yyyy") and will contact you
+                        at @_lastPhone shortly. For anything urgent, call us directly or message us on WhatsApp.
+                    </p>
+                    @if (_lastDateMaybeBooked)
+                    {
+                        <div class="gc-alert gc-alert-danger" style="text-align:left;">
+                            Heads up: that date already has another booking on file for the hall you selected.
+                            We'll reach out with the best available alternatives.
+                        </div>
+                    }
+                    <a href="/" class="gc-btn gc-btn-outline" style="margin-top:12px;">Back to Home</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="gc-card">
+                <div class="gc-card-body">
+                    <EditForm Model="_model" OnValidSubmit="Submit" FormName="quote-request">
+                        <DataAnnotationsValidator />
+
+                        <div class="grid grid-2">
+                            <div class="field">
+                                <label for="fullName">Full Name</label>
+                                <InputText id="fullName" class="input" @bind-Value="_model.FullName" placeholder="Your name" />
+                                <ValidationMessage For="() => _model.FullName" />
+                            </div>
+                            <div class="field">
+                                <label for="phone">Phone Number</label>
+                                <InputText id="phone" class="input" @bind-Value="_model.Phone" placeholder="03xx xxxxxxx" />
+                                <ValidationMessage For="() => _model.Phone" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="email">Email (optional)</label>
+                            <InputText id="email" class="input" @bind-Value="_model.Email" placeholder="you@example.com" />
+                            <ValidationMessage For="() => _model.Email" />
+                        </div>
+
+                        <div class="grid grid-2">
+                            <div class="field">
+                                <label for="eventType">Event Type</label>
+                                <InputSelect id="eventType" class="input" @bind-Value="_model.EventType">
+                                    @foreach (var type in Enum.GetValues<EventType>())
+                                    {
+                                        <option value="@type">@type.ToDisplayName()</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="field">
+                                <label for="guestCount">Expected Guests</label>
+                                <InputNumber id="guestCount" class="input" @bind-Value="_model.GuestCount" />
+                                <ValidationMessage For="() => _model.GuestCount" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-2">
+                            <div class="field">
+                                <label for="date">Preferred Date</label>
+                                <InputDate id="date" class="input" @bind-Value="_preferredDate" />
+                            </div>
+                            <div class="field">
+                                <label for="hall">Preferred Hall</label>
+                                <InputSelect id="hall" class="input" @bind-Value="_model.HallId">
+                                    <option value="">No preference</option>
+                                    @foreach (var hall in _halls)
+                                    {
+                                        <option value="@hall.Id">@hall.Name (up to @hall.SeatingCapacity guests)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="package">Package</label>
+                            <InputSelect id="package" class="input" @bind-Value="_model.PackageId">
+                                <option value="">Not sure yet</option>
+                                @foreach (var package in _packages)
+                                {
+                                    <option value="@package.Id">@package.Name — Rs. @package.StartingPriceRs.ToString("N0")</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="field">
+                            <label for="message">Additional Details (optional)</label>
+                            <InputTextArea id="message" class="input" rows="4" @bind-Value="_model.Message" placeholder="Décor preferences, catering needs, anything else we should know..." />
+                        </div>
+
+                        @* Honeypot: hidden from real users via CSS; bots that fill every field will trip this. *@
+                        <div class="visually-hidden" aria-hidden="true">
+                            <label for="company">Company</label>
+                            <InputText id="company" @bind-Value="_honeypot" tabindex="-1" autocomplete="off" />
+                        </div>
+
+                        <button type="submit" class="gc-btn gc-btn-primary gc-btn-block" disabled="@_submitting">
+                            @(_submitting ? "Sending..." : "Request My Quote")
+                        </button>
+                    </EditForm>
+                </div>
+            </div>
+
+            <div class="quote-venue-note">
+                <a href="@_settings.GoogleMapsDirectionsUrl" target="_blank" rel="noopener" class="quote-venue-map" aria-label="Open our location in Google Maps">
+                    <iframe
+                        title="Gateway Centre location"
+                        src="@_settings.GoogleMapsEmbedUrl"
+                        loading="lazy"
+                        tabindex="-1"
+                        referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </a>
+                <div>
+                    <strong>Visiting before you book?</strong>
+                    <p class="gc-text-muted mt-0">@_settings.Address</p>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [SupplyParameterFromQuery]
+    public int? PackageId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public int? HallId { get; set; }
+
+    private readonly QuoteRequest _model = new();
+    private DateOnly _preferredDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
+    private List<Hall> _halls = [];
+    private List<Package> _packages = [];
+    private string? _honeypot;
+    private bool _submitting;
+    private bool _submitted;
+
+    private string? _lastName;
+    private string? _lastPhone;
+    private DateOnly? _lastDate;
+    private bool _lastDateMaybeBooked;
+    private Models.SiteSettings _settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _settings = await SiteContent.GetSettingsAsync();
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _halls = await db.Halls.Where(h => h.IsPublished).OrderBy(h => h.DisplayOrder).ToListAsync();
+        _packages = await db.Packages.Where(p => p.IsPublished).OrderBy(p => p.DisplayOrder).ToListAsync();
+
+        if (PackageId is not null && _packages.Any(p => p.Id == PackageId))
+        {
+            _model.PackageId = PackageId;
+        }
+        if (HallId is not null && _halls.Any(h => h.Id == HallId))
+        {
+            _model.HallId = HallId;
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(_honeypot))
+        {
+            // Silently "succeed" for bots without writing to the database.
+            _submitted = true;
+            return;
+        }
+
+        _submitting = true;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        _model.PreferredDate = _preferredDate;
+
+        _lastDateMaybeBooked = _model.HallId is not null && await db.BlockedDates.AnyAsync(b =>
+            b.Date == _preferredDate && (b.HallId == _model.HallId || b.HallId == null));
+
+        db.QuoteRequests.Add(_model);
+        await db.SaveChangesAsync();
+
+        _lastName = _model.FullName;
+        _lastPhone = _model.Phone;
+        _lastDate = _model.PreferredDate;
+
+        _submitting = false;
+        _submitted = true;
+    }
+}

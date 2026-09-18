@@ -1,0 +1,54 @@
+@rendermode InteractiveServer
+@inject Services.SiteContentService SiteContent
+
+<div class="topbar">
+    <div class="gc-container topbar-inner">
+        <div class="gc-row gap-md wrap">
+            <a href="tel:@_settings.PrimaryPhone.Replace(" ", "")">📞 @_settings.PrimaryPhone</a>
+            <a href="mailto:@_settings.Email">✉ @_settings.Email</a>
+        </div>
+        <SocialLinks />
+    </div>
+</div>
+
+<header class="site-header">
+    <div class="gc-container site-header-inner">
+        <a href="/" class="brand">
+            <span class="brand-mark" aria-hidden="true">
+                <img src="/images/logo-monogram-white.png" alt="" width="30" height="19" />
+            </span>
+            <span class="brand-text">
+                <strong>@_settings.SiteName</strong>
+                <small>@_settings.Tagline</small>
+            </span>
+        </a>
+
+        <nav class="main-nav @(_menuOpen ? "open" : "")" aria-label="Primary">
+            <NavLink href="/" Match="Microsoft.AspNetCore.Components.Routing.NavLinkMatch.All" @onclick="Close">Home</NavLink>
+            <NavLink href="/services" @onclick="Close">Services</NavLink>
+            <NavLink href="/our-spaces" @onclick="Close">Our Spaces</NavLink>
+            <NavLink href="/packages" @onclick="Close">Packages</NavLink>
+            <NavLink href="/gallery" @onclick="Close">Gallery</NavLink>
+            <NavLink href="/about" @onclick="Close">About</NavLink>
+            <NavLink href="/contact" @onclick="Close">Location</NavLink>
+            <a href="/request-a-quote" class="gc-btn gc-btn-primary gc-btn-sm nav-cta" @onclick="Close">Request a Quote</a>
+        </nav>
+
+        <button class="menu-toggle" @onclick="Toggle" aria-label="Toggle menu" aria-expanded="@_menuOpen">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</header>
+
+@code {
+    private bool _menuOpen;
+    private Models.SiteSettings _settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _settings = await SiteContent.GetSettingsAsync();
+    }
+
+    private void Toggle() => _menuOpen = !_menuOpen;
+    private void Close() => _menuOpen = false;
+}

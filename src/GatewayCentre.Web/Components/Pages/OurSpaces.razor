@@ -1,0 +1,51 @@
+@page "/our-spaces"
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Our Spaces — Gateway Centre</PageTitle>
+
+<section class="page-hero">
+    <div class="gc-container">
+        <span class="section-eyebrow" style="background:rgba(255,255,255,.16);color:#fff;">Our Spaces</span>
+        <h1 style="color:#fff;">Two Halls Built for Every Occasion</h1>
+        <OrnamentDivider Light="true" />
+        <p style="color:rgba(255,255,255,.85);max-width:560px;">Choose the setting that matches your guest list and the mood of your celebration.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container stack" style="gap:56px;">
+        @foreach (var hall in _halls)
+        {
+            <div class="hall-block">
+                <ImageOrPlaceholder ImageUrl="@hall.ImageUrl" Alt="@hall.Name" CssClass="hall-image" PlaceholderLabel="@hall.Name" />
+                <div class="hall-info">
+                    <span class="gc-badge">@hall.Floor</span>
+                    <h2 style="margin-top:10px;">@hall.Name</h2>
+                    <p class="gc-text-muted">@hall.Description</p>
+                    <ul class="feature-list">
+                        <li>Seating capacity up to @hall.SeatingCapacity guests</li>
+                        <li>Flexible stage &amp; seating layouts</li>
+                        <li>Sound system &amp; lighting included</li>
+                        <li>On-site parking</li>
+                    </ul>
+                    <a href="/request-a-quote?hallId=@hall.Id" class="gc-btn gc-btn-primary">Request a Quote for This Hall</a>
+                </div>
+            </div>
+        }
+
+        @if (_halls.Count == 0)
+        {
+            <p class="gc-text-muted">Hall details will be published here shortly.</p>
+        }
+    </div>
+</section>
+
+@code {
+    private List<Hall> _halls = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _halls = await db.Halls.Where(h => h.IsPublished).OrderBy(h => h.DisplayOrder).ToListAsync();
+    }
+}

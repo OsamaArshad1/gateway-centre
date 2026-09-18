@@ -1,0 +1,137 @@
+@page "/admin/quotes"
+@rendermode InteractiveServer
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Quote Requests — Admin</PageTitle>
+
+<div class="admin-topbar">
+    <div>
+        <h1 style="margin-bottom:4px;">Quote Requests</h1>
+        <p class="gc-text-muted gc-mt-0">Everything submitted through the public "Request a Quote" form.</p>
+    </div>
+    <div class="gc-row gap-sm">
+        <select class="input" style="width:auto;" @bind="_statusFilter" @bind:after="Load">
+            <option value="">All statuses</option>
+            @foreach (var s in Enum.GetValues<QuoteStatus>())
+            {
+                <option value="@s">@s</option>
+            }
+        </select>
+    </div>
+</div>
+
+@if (_quotes.Count == 0)
+{
+    <p class="gc-text-muted">No quote requests found.</p>
+}
+else
+{
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Contact</th>
+                <th>Event</th>
+                <th>Date</th>
+                <th>Guests</th>
+                <th>Hall / Package</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var q in _quotes)
+            {
+                <tr>
+                    <td>
+                        <strong>@q.FullName</strong><br />
+                        <a href="tel:@q.Phone">@q.Phone</a>
+                        @if (!string.IsNullOrWhiteSpace(q.Email))
+                        {
+                            <br />
+                            <a href="mailto:@q.Email">@q.Email</a>
+                        }
+                    </td>
+                    <td>@q.EventType.ToDisplayName()</td>
+                    <td>@q.PreferredDate.ToString("dd MMM yyyy")</td>
+                    <td>@q.GuestCount</td>
+                    <td>
+                        @(q.Hall?.Name ?? "—")<br />
+                        <span class="gc-text-muted">@(q.Package?.Name ?? "No package selected")</span>
+                    </td>
+                    <td>
+                        <select class="input" style="min-width:130px;" value="@q.Status" @onchange="e => UpdateStatus(q, e.Value)">
+                            @foreach (var s in Enum.GetValues<QuoteStatus>())
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="actions">
+                        <button class="icon-btn" @onclick="() => ToggleExpand(q.Id)">@(_expandedId == q.Id ? "Hide" : "Details")</button>
+                    </td>
+                </tr>
+                @if (_expandedId == q.Id)
+                {
+                    <tr>
+                        <td colspan="7" style="background:var(--color-bg);">
+                            <p><strong>Message:</strong> @(string.IsNullOrWhiteSpace(q.Message) ? "—" : q.Message)</p>
+                            <div class="field" style="max-width:480px;">
+                                <label>Admin Notes</label>
+                                <textarea class="input" rows="2" @bind="q.AdminNotes" @bind:after="() => SaveNotes(q)"></textarea>
+                            </div>
+                            <span class="gc-text-muted">Submitted @q.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, h:mm tt")</span>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<QuoteRequest> _quotes = [];
+    private string _statusFilter = "";
+    private int? _expandedId;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var query = db.QuoteRequests.Include(q => q.Hall).Include(q => q.Package).AsQueryable();
+
+        if (Enum.TryParse<QuoteStatus>(_statusFilter, out var status))
+        {
+            query = query.Where(q => q.Status == status);
+        }
+
+        _quotes = await query.OrderByDescending(q => q.CreatedAt).ToListAsync();
+    }
+
+    private void ToggleExpand(int id) => _expandedId = _expandedId == id ? null : id;
+
+    private async Task UpdateStatus(QuoteRequest quote, object? value)
+    {
+        if (value is not string s || !Enum.TryParse<QuoteStatus>(s, out var status))
+        {
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        await db.QuoteRequests
+            .Where(q => q.Id == quote.Id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(q => q.Status, status));
+
+        quote.Status = status;
+    }
+
+    private async Task SaveNotes(QuoteRequest quote)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        await db.QuoteRequests
+            .Where(q => q.Id == quote.Id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(q => q.AdminNotes, quote.AdminNotes));
+    }
+}

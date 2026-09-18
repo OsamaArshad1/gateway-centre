@@ -1,0 +1,63 @@
+@page "/contact"
+@inject SiteContentService SiteContent
+
+<PageTitle>Location &amp; Contact — Gateway Centre</PageTitle>
+
+<section class="page-hero">
+    <div class="gc-container">
+        <span class="section-eyebrow" style="background:rgba(255,255,255,.16);color:#fff;">Location &amp; Contact</span>
+        <h1 style="color:#fff;">Find Us in Khanpur</h1>
+        <OrnamentDivider Light="true" />
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container grid grid-2" style="align-items:start;">
+        <div class="stack" style="gap:18px;">
+            <div class="gc-card">
+                <div class="gc-card-body">
+                    <h3>Address</h3>
+                    <p class="gc-text-muted">@_settings.Address</p>
+                    <a class="gc-btn gc-btn-outline gc-btn-sm" href="@_settings.GoogleMapsDirectionsUrl" target="_blank" rel="noopener">Get Directions</a>
+                </div>
+            </div>
+            <div class="gc-card">
+                <div class="gc-card-body">
+                    <h3>Phone</h3>
+                    <p><a href="tel:@_settings.PrimaryPhone.Replace(" ", "")">@_settings.PrimaryPhone</a></p>
+                    @if (!string.IsNullOrWhiteSpace(_settings.SecondaryPhone))
+                    {
+                        <p><a href="tel:@_settings.SecondaryPhone.Replace(" ", "")">@_settings.SecondaryPhone</a></p>
+                    }
+                </div>
+            </div>
+            <div class="gc-card">
+                <div class="gc-card-body">
+                    <h3>Email</h3>
+                    <p><a href="mailto:@_settings.Email">@_settings.Email</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-frame">
+            <iframe
+                title="Gateway Centre location"
+                src="@_settings.GoogleMapsEmbedUrl"
+                width="100%"
+                height="100%"
+                style="border:0;"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div>
+    </div>
+</section>
+
+@code {
+    private Models.SiteSettings _settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _settings = await SiteContent.GetSettingsAsync();
+    }
+}

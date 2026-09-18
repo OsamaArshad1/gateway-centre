@@ -1,0 +1,121 @@
+@page "/admin/testimonials"
+@rendermode InteractiveServer
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Testimonials — Admin</PageTitle>
+
+<div class="admin-topbar">
+    <div>
+        <h1 style="margin-bottom:4px;">Testimonials</h1>
+        <p class="gc-text-muted gc-mt-0">Shown on the homepage.</p>
+    </div>
+    <button class="gc-btn gc-btn-primary gc-btn-sm" @onclick="NewTestimonial">+ Add Testimonial</button>
+</div>
+
+@if (_editing is not null)
+{
+    <div class="admin-panel">
+        <h3>@(_editing.Id == 0 ? "New Testimonial" : "Edit Testimonial")</h3>
+        <EditForm Model="_editing" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Author Name</label>
+                    <InputText class="input" @bind-Value="_editing.AuthorName" />
+                </div>
+                <div class="field">
+                    <label>Event Type</label>
+                    <InputText class="input" @bind-Value="_editing.EventType" />
+                </div>
+            </div>
+            <div class="field">
+                <label>Quote</label>
+                <InputTextArea class="input" rows="3" @bind-Value="_editing.Quote" />
+            </div>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Rating (1–5)</label>
+                    <InputNumber class="input" @bind-Value="_editing.Rating" />
+                </div>
+                <div class="field" style="align-self:end;">
+                    <label><InputCheckbox @bind-Value="_editing.IsPublished" /> Published</label>
+                </div>
+            </div>
+            <div class="gc-row gap-sm">
+                <button type="submit" class="gc-btn gc-btn-primary">Save</button>
+                <button type="button" class="icon-btn" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
+    </div>
+}
+
+<table class="admin-table">
+    <thead>
+        <tr><th>Author</th><th>Event</th><th>Quote</th><th>Rating</th><th>Published</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var t in _testimonials)
+        {
+            <tr>
+                <td>@t.AuthorName</td>
+                <td>@t.EventType</td>
+                <td>@t.Quote</td>
+                <td>@t.Rating★</td>
+                <td>@(t.IsPublished ? "Yes" : "No")</td>
+                <td class="actions">
+                    <button class="icon-btn" @onclick="() => Edit(t)">Edit</button>
+                    <button class="icon-btn danger" @onclick="() => Delete(t.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Testimonial> _testimonials = [];
+    private Testimonial? _editing;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _testimonials = await db.Testimonials.OrderBy(t => t.DisplayOrder).ToListAsync();
+    }
+
+    private void NewTestimonial() => _editing = new Testimonial { DisplayOrder = _testimonials.Count + 1 };
+    private void Edit(Testimonial t) => _editing = new Testimonial
+    {
+        Id = t.Id, AuthorName = t.AuthorName, EventType = t.EventType, Quote = t.Quote,
+        Rating = t.Rating, DisplayOrder = t.DisplayOrder, IsPublished = t.IsPublished
+    };
+    private void Cancel() => _editing = null;
+
+    private async Task Save()
+    {
+        if (_editing is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        if (_editing.Id == 0)
+        {
+            db.Testimonials.Add(_editing);
+        }
+        else
+        {
+            db.Testimonials.Update(_editing);
+        }
+
+        await db.SaveChangesAsync();
+        _editing = null;
+        await Load();
+    }
+
+    private async Task Delete(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        await db.Testimonials.Where(t => t.Id == id).ExecuteDeleteAsync();
+        await Load();
+    }
+}

@@ -1,0 +1,134 @@
+@page "/admin/settings"
+@rendermode InteractiveServer
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject SiteContentService SiteContent
+
+<PageTitle>Site Settings — Admin</PageTitle>
+
+<div class="admin-topbar">
+    <div>
+        <h1 style="margin-bottom:4px;">Site Settings</h1>
+        <p class="gc-text-muted gc-mt-0">Contact details, map location and social links shown across the public site.</p>
+    </div>
+</div>
+
+@if (_saved)
+{
+    <div class="gc-alert gc-alert-success">Settings saved.</div>
+}
+
+@if (_settings is not null)
+{
+    <div class="admin-panel">
+        <EditForm Model="_settings" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+
+            <h3>General</h3>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Site Name</label>
+                    <InputText class="input" @bind-Value="_settings.SiteName" />
+                </div>
+                <div class="field">
+                    <label>Tagline</label>
+                    <InputText class="input" @bind-Value="_settings.Tagline" />
+                </div>
+            </div>
+            <div class="field">
+                <label>Homepage Headline</label>
+                <InputText class="input" @bind-Value="_settings.HeroHeadline" />
+            </div>
+            <div class="field">
+                <label>Homepage Subheadline</label>
+                <InputTextArea class="input" rows="2" @bind-Value="_settings.HeroSubheadline" />
+            </div>
+
+            <h3 style="margin-top:24px;">Contact</h3>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Primary Phone</label>
+                    <InputText class="input" @bind-Value="_settings.PrimaryPhone" />
+                </div>
+                <div class="field">
+                    <label>Secondary Phone</label>
+                    <InputText class="input" @bind-Value="_settings.SecondaryPhone" />
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>WhatsApp Number</label>
+                    <InputText class="input" @bind-Value="_settings.WhatsAppNumber" />
+                    <span class="hint">Include country code, e.g. +923036890241</span>
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <InputText class="input" @bind-Value="_settings.Email" />
+                </div>
+            </div>
+
+            <h3 style="margin-top:24px;">Location &amp; Map</h3>
+            <div class="field">
+                <label>Address</label>
+                <InputText class="input" @bind-Value="_settings.Address" />
+            </div>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Latitude</label>
+                    <InputNumber class="input" @bind-Value="_settings.Latitude" />
+                </div>
+                <div class="field">
+                    <label>Longitude</label>
+                    <InputNumber class="input" @bind-Value="_settings.Longitude" />
+                </div>
+            </div>
+            <p class="hint">
+                Tip: open Google Maps, right-click your exact venue location, and copy the two coordinate numbers shown
+                (e.g. 28.6483, 70.6601) into the fields above. Leave blank to fall back to searching by address text.
+            </p>
+
+            <h3 style="margin-top:24px;">Social Links</h3>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Facebook URL</label>
+                    <InputText class="input" @bind-Value="_settings.FacebookUrl" />
+                </div>
+                <div class="field">
+                    <label>Instagram URL</label>
+                    <InputText class="input" @bind-Value="_settings.InstagramUrl" />
+                </div>
+                <div class="field">
+                    <label>X (Twitter) URL</label>
+                    <InputText class="input" @bind-Value="_settings.TwitterUrl" />
+                </div>
+            </div>
+            <p class="hint">WhatsApp uses the WhatsApp Number set under Contact above.</p>
+
+            <button type="submit" class="gc-btn gc-btn-primary">Save Settings</button>
+        </EditForm>
+    </div>
+}
+
+@code {
+    private Models.SiteSettings? _settings;
+    private bool _saved;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _settings = await db.SiteSettings.AsNoTracking().FirstOrDefaultAsync() ?? new Models.SiteSettings();
+    }
+
+    private async Task Save()
+    {
+        if (_settings is null) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.SiteSettings.Update(_settings);
+        await db.SaveChangesAsync();
+
+        SiteContent.InvalidateCache();
+        _saved = true;
+    }
+}

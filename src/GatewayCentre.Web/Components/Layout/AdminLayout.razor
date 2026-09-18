@@ -1,0 +1,35 @@
+@inherits LayoutComponentBase
+
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <a href="/" class="admin-brand">
+            <span class="brand-mark light" style="width:32px;height:32px;">
+                <img src="/images/logo-monogram-green.png" alt="" width="22" height="14" />
+            </span>
+            <span>Gateway Admin</span>
+        </a>
+
+        <nav class="admin-nav">
+            <NavLink href="/admin" Match="Microsoft.AspNetCore.Components.Routing.NavLinkMatch.All">Dashboard</NavLink>
+            <NavLink href="/admin/quotes">Quote Requests</NavLink>
+            <NavLink href="/admin/halls">Halls</NavLink>
+            <NavLink href="/admin/packages">Packages</NavLink>
+            <NavLink href="/admin/gallery">Gallery</NavLink>
+            <NavLink href="/admin/testimonials">Testimonials</NavLink>
+            <NavLink href="/admin/settings">Site Settings</NavLink>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            <a href="/" target="_blank">View Live Site ↗</a>
+            <form action="/Account/Logout" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="/" />
+                <button type="submit" class="admin-logout">Log Out</button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        @Body
+    </main>
+</div>

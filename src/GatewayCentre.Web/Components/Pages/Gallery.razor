@@ -1,0 +1,76 @@
+@page "/gallery"
+@rendermode InteractiveServer
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Gallery — Gateway Centre</PageTitle>
+
+<section class="page-hero">
+    <div class="gc-container">
+        <span class="section-eyebrow" style="background:rgba(255,255,255,.16);color:#fff;">Gallery</span>
+        <h1 style="color:#fff;">A Look Inside Gateway Centre</h1>
+        <OrnamentDivider Light="true" />
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container">
+        <div class="gc-row gap-sm wrap" style="margin-bottom:32px;">
+            <button class="filter-chip @(_activeFilter is null ? "active" : "")" @onclick="() => SetFilter(null)">All</button>
+            @foreach (var category in Enum.GetValues<GalleryCategory>())
+            {
+                <button class="filter-chip @(_activeFilter == category ? "active" : "")" @onclick="() => SetFilter(category)">@category</button>
+            }
+        </div>
+
+        @if (_filteredImages.Count == 0)
+        {
+            <p class="gc-text-muted">No photos in this category yet — check back soon.</p>
+        }
+        else
+        {
+            <div class="gallery-grid">
+                @foreach (var image in _filteredImages)
+                {
+                    <button type="button" class="gallery-item" @onclick="() => Open(image)">
+                        <ImageOrPlaceholder ImageUrl="@image.ImageUrl" Alt="@(image.Caption ?? image.Category.ToString())" CssClass="gallery-img" PlaceholderLabel="@image.Category.ToString()" />
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@if (_selected is not null)
+{
+    <div class="lightbox" @onclick="Close">
+        <button class="lightbox-close" @onclick="Close" aria-label="Close">&times;</button>
+        <img src="@_selected.ImageUrl" alt="@_selected.Caption" @onclick:stopPropagation="true" />
+        @if (!string.IsNullOrWhiteSpace(_selected.Caption))
+        {
+            <p class="lightbox-caption" @onclick:stopPropagation="true">@_selected.Caption</p>
+        }
+    </div>
+}
+
+@code {
+    private List<GalleryImage> _images = [];
+    private List<GalleryImage> _filteredImages = [];
+    private GalleryCategory? _activeFilter;
+    private GalleryImage? _selected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _images = await db.GalleryImages.Where(g => g.IsPublished).OrderBy(g => g.DisplayOrder).ToListAsync();
+        _filteredImages = _images;
+    }
+
+    private void SetFilter(GalleryCategory? category)
+    {
+        _activeFilter = category;
+        _filteredImages = category is null ? _images : _images.Where(i => i.Category == category).ToList();
+    }
+
+    private void Open(GalleryImage image) => _selected = image;
+    private void Close() => _selected = null;
+}

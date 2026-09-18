@@ -1,0 +1,83 @@
+@page "/admin"
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Admin Dashboard — Gateway Centre</PageTitle>
+
+<div class="admin-topbar">
+    <div>
+        <h1 style="margin-bottom:4px;">Dashboard</h1>
+        <p class="gc-text-muted gc-mt-0">Welcome back — here's what's happening with Gateway Centre.</p>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card"><strong>@_newQuotes</strong><span>New Quote Requests</span></div>
+    <div class="stat-card"><strong>@_totalQuotes</strong><span>Total Quote Requests</span></div>
+    <div class="stat-card"><strong>@_hallCount</strong><span>Published Halls</span></div>
+    <div class="stat-card"><strong>@_packageCount</strong><span>Published Packages</span></div>
+</div>
+
+<div class="admin-panel">
+    <div class="gc-row" style="justify-content:space-between;">
+        <h3 style="margin:0;">Recent Quote Requests</h3>
+        <a href="/admin/quotes" class="icon-btn">View All</a>
+    </div>
+
+    @if (_recentQuotes.Count == 0)
+    {
+        <p class="gc-text-muted">No quote requests yet.</p>
+    }
+    else
+    {
+        <table class="admin-table" style="margin-top:16px;">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Event</th>
+                    <th>Date</th>
+                    <th>Guests</th>
+                    <th>Status</th>
+                    <th>Received</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var q in _recentQuotes)
+                {
+                    <tr>
+                        <td>@q.FullName<br /><span class="gc-text-muted">@q.Phone</span></td>
+                        <td>@q.EventType</td>
+                        <td>@q.PreferredDate.ToString("dd MMM yyyy")</td>
+                        <td>@q.GuestCount</td>
+                        <td><span class="status-pill status-@q.Status">@q.Status</span></td>
+                        <td>@q.CreatedAt.ToLocalTime().ToString("dd MMM, h:mm tt")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private int _newQuotes;
+    private int _totalQuotes;
+    private int _hallCount;
+    private int _packageCount;
+    private List<QuoteRequest> _recentQuotes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        _totalQuotes = await db.QuoteRequests.CountAsync();
+        _newQuotes = await db.QuoteRequests.CountAsync(q => q.Status == QuoteStatus.New);
+        _hallCount = await db.Halls.CountAsync(h => h.IsPublished);
+        _packageCount = await db.Packages.CountAsync(p => p.IsPublished);
+
+        _recentQuotes = await db.QuoteRequests
+            .OrderByDescending(q => q.CreatedAt)
+            .Take(8)
+            .ToListAsync();
+    }
+}

@@ -1,0 +1,73 @@
+@inject Services.SiteContentService SiteContent
+
+<footer class="site-footer">
+    <div class="gc-container footer-grid">
+        <div class="footer-col">
+            <div class="brand brand-footer">
+                <span class="brand-mark light">
+                    <img src="/images/logo-monogram-green.png" alt="" width="30" height="19" />
+                </span>
+                <span class="brand-text">
+                    <strong>@_settings.SiteName</strong>
+                    <small>@_settings.Tagline</small>
+                </span>
+            </div>
+            <p class="gc-text-muted" style="margin-top:16px;max-width:320px;">
+                @_settings.HeroSubheadline
+            </p>
+        </div>
+
+        <div class="footer-col">
+            <h4>Explore</h4>
+            <ul class="footer-links">
+                <li><a href="/services">Services</a></li>
+                <li><a href="/our-spaces">Our Spaces</a></li>
+                <li><a href="/packages">Packages</a></li>
+                <li><a href="/gallery">Gallery</a></li>
+                <li><a href="/about">About Us</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-col">
+            <h4>Contact</h4>
+            <ul class="footer-links">
+                <li><a href="tel:@_settings.PrimaryPhone.Replace(" ", "")">@_settings.PrimaryPhone</a></li>
+                @if (!string.IsNullOrWhiteSpace(_settings.SecondaryPhone))
+                {
+                    <li><a href="tel:@_settings.SecondaryPhone.Replace(" ", "")">@_settings.SecondaryPhone</a></li>
+                }
+                <li><a href="mailto:@_settings.Email">@_settings.Email</a></li>
+                <li class="gc-text-muted">@_settings.Address</li>
+            </ul>
+            <a href="@_settings.GoogleMapsDirectionsUrl" target="_blank" rel="noopener" class="footer-map-thumb" aria-label="Open our location in Google Maps">
+                <iframe
+                    title="Gateway Centre location"
+                    src="@_settings.GoogleMapsEmbedUrl"
+                    loading="lazy"
+                    tabindex="-1"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </a>
+        </div>
+
+        <div class="footer-col">
+            <h4>Follow Us</h4>
+            <p class="gc-text-muted">Stay updated with our latest events and offers.</p>
+            <SocialLinks />
+        </div>
+    </div>
+
+    <div class="gc-container footer-bottom">
+        <span>&copy; @DateTime.Now.Year @_settings.SiteName. All rights reserved.</span>
+        <span class="gc-text-muted">Khanpur, Pakistan</span>
+    </div>
+</footer>
+
+@code {
+    private Models.SiteSettings _settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _settings = await SiteContent.GetSettingsAsync();
+    }
+}

@@ -1,0 +1,112 @@
+@page "/admin/gallery"
+@rendermode InteractiveServer
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ImageUploadService ImageUpload
+
+<PageTitle>Gallery — Admin</PageTitle>
+
+<div class="admin-topbar">
+    <div>
+        <h1 style="margin-bottom:4px;">Gallery</h1>
+        <p class="gc-text-muted gc-mt-0">Upload photos for the public Gallery page.</p>
+    </div>
+</div>
+
+<div class="admin-panel">
+    <h3>Upload New Photo</h3>
+    <div class="grid grid-2">
+        <div class="field">
+            <label>Photo</label>
+            <InputFile OnChange="OnFileSelected" accept="image/*" />
+            @if (_uploading) { <span class="gc-text-muted"> Uploading...</span> }
+            @if (!string.IsNullOrWhiteSpace(_pendingUrl))
+            {
+                <img src="@_pendingUrl" class="thumb-sm" style="margin-top:8px;" alt="" />
+            }
+        </div>
+        <div class="field">
+            <label>Category</label>
+            <select class="input" @bind="_pendingCategory">
+                @foreach (var c in Enum.GetValues<GalleryCategory>())
+                {
+                    <option value="@c">@c</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="field">
+        <label>Caption (optional)</label>
+        <input class="input" @bind="_pendingCaption" />
+    </div>
+    <button class="gc-btn gc-btn-primary" disabled="@(string.IsNullOrWhiteSpace(_pendingUrl))" @onclick="AddImage">Add to Gallery</button>
+</div>
+
+<div class="gallery-grid">
+    @foreach (var image in _images)
+    {
+        <div class="admin-gallery-item">
+            <img src="@image.ImageUrl" class="gallery-img" alt="" />
+            <div class="admin-gallery-meta">
+                <span class="gc-badge">@image.Category</span>
+                <button class="icon-btn danger" @onclick="() => Delete(image.Id)">Delete</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<GalleryImage> _images = [];
+    private string? _pendingUrl;
+    private string? _pendingCaption;
+    private GalleryCategory _pendingCategory = GalleryCategory.Weddings;
+    private bool _uploading;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _images = await db.GalleryImages.OrderByDescending(g => g.UploadedAt).ToListAsync();
+    }
+
+    private async Task OnFileSelected(Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs e)
+    {
+        _uploading = true;
+        try
+        {
+            _pendingUrl = await ImageUpload.SaveAsync(e.File);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private async Task AddImage()
+    {
+        if (string.IsNullOrWhiteSpace(_pendingUrl)) return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.GalleryImages.Add(new GalleryImage
+        {
+            ImageUrl = _pendingUrl,
+            Caption = _pendingCaption,
+            Category = _pendingCategory,
+            DisplayOrder = _images.Count + 1
+        });
+        await db.SaveChangesAsync();
+
+        _pendingUrl = null;
+        _pendingCaption = null;
+        await Load();
+    }
+
+    private async Task Delete(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        await db.GalleryImages.Where(g => g.Id == id).ExecuteDeleteAsync();
+        await Load();
+    }
+}

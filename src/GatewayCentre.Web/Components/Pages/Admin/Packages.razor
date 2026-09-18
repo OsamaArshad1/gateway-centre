@@ -1,0 +1,125 @@
+@page "/admin/packages"
+@rendermode InteractiveServer
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Packages — Admin</PageTitle>
+
+<div class="admin-topbar">
+    <div>
+        <h1 style="margin-bottom:4px;">Packages</h1>
+        <p class="gc-text-muted gc-mt-0">Shown on the homepage, Packages page, and quote form.</p>
+    </div>
+    <button class="gc-btn gc-btn-primary gc-btn-sm" @onclick="NewPackage">+ Add Package</button>
+</div>
+
+@if (_editing is not null)
+{
+    <div class="admin-panel">
+        <h3>@(_editing.Id == 0 ? "New Package" : "Edit Package")</h3>
+        <EditForm Model="_editing" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Name</label>
+                    <InputText class="input" @bind-Value="_editing.Name" />
+                </div>
+                <div class="field">
+                    <label>Starting Price (Rs.)</label>
+                    <InputNumber class="input" @bind-Value="_editing.StartingPriceRs" />
+                </div>
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <InputTextArea class="input" rows="2" @bind-Value="_editing.Description" />
+            </div>
+            <div class="field">
+                <label>Features (one per line)</label>
+                <InputTextArea class="input" rows="6" @bind-Value="_editing.FeaturesText" />
+            </div>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Display Order</label>
+                    <InputNumber class="input" @bind-Value="_editing.DisplayOrder" />
+                </div>
+                <div class="field" style="align-self:end;">
+                    <label><InputCheckbox @bind-Value="_editing.IsFeatured" /> Featured ("Most Popular")</label>
+                    <label><InputCheckbox @bind-Value="_editing.IsPublished" /> Published</label>
+                </div>
+            </div>
+            <div class="gc-row gap-sm">
+                <button type="submit" class="gc-btn gc-btn-primary">Save</button>
+                <button type="button" class="icon-btn" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
+    </div>
+}
+
+<table class="admin-table">
+    <thead>
+        <tr><th>Name</th><th>Price</th><th>Featured</th><th>Published</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var p in _packages)
+        {
+            <tr>
+                <td>@p.Name</td>
+                <td>Rs. @p.StartingPriceRs.ToString("N0")</td>
+                <td>@(p.IsFeatured ? "Yes" : "—")</td>
+                <td>@(p.IsPublished ? "Yes" : "No")</td>
+                <td class="actions">
+                    <button class="icon-btn" @onclick="() => Edit(p)">Edit</button>
+                    <button class="icon-btn danger" @onclick="() => Delete(p.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Package> _packages = [];
+    private Package? _editing;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _packages = await db.Packages.OrderBy(p => p.DisplayOrder).ToListAsync();
+    }
+
+    private void NewPackage() => _editing = new Package { DisplayOrder = _packages.Count + 1 };
+    private void Edit(Package p) => _editing = new Package
+    {
+        Id = p.Id, Name = p.Name, Description = p.Description, StartingPriceRs = p.StartingPriceRs,
+        FeaturesText = p.FeaturesText, IsFeatured = p.IsFeatured, DisplayOrder = p.DisplayOrder, IsPublished = p.IsPublished
+    };
+    private void Cancel() => _editing = null;
+
+    private async Task Save()
+    {
+        if (_editing is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        if (_editing.Id == 0)
+        {
+            db.Packages.Add(_editing);
+        }
+        else
+        {
+            db.Packages.Update(_editing);
+        }
+
+        await db.SaveChangesAsync();
+        _editing = null;
+        await Load();
+    }
+
+    private async Task Delete(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        await db.Packages.Where(p => p.Id == id).ExecuteDeleteAsync();
+        await Load();
+    }
+}

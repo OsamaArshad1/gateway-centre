@@ -1,0 +1,13 @@
+@* A small decorative hairline + hexagon-mark divider, echoing the brand's hexagon monogram. *@
+
+<div class="ornament-divider @(Light ? "light" : "")" aria-hidden="true">
+    <span class="ornament-line"></span>
+    <svg viewBox="0 0 40 28" width="26" height="18">
+        <path d="M13 2 L27 2 L37 14 L27 26 L13 26 L3 14 Z" fill="none" stroke="currentColor" stroke-width="2" />
+    </svg>
+    <span class="ornament-line"></span>
+</div>
+
+@code {
+    [Parameter] public bool Light { get; set; }
+}

@@ -1,0 +1,155 @@
+@page "/admin/halls"
+@rendermode InteractiveServer
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ImageUploadService ImageUpload
+
+<PageTitle>Halls — Admin</PageTitle>
+
+<div class="admin-topbar">
+    <div>
+        <h1 style="margin-bottom:4px;">Halls</h1>
+        <p class="gc-text-muted gc-mt-0">Manage the halls shown on Our Spaces and the quote form.</p>
+    </div>
+    <button class="gc-btn gc-btn-primary gc-btn-sm" @onclick="NewHall">+ Add Hall</button>
+</div>
+
+@if (_editing is not null)
+{
+    <div class="admin-panel">
+        <h3>@(_editing.Id == 0 ? "New Hall" : "Edit Hall")</h3>
+        <EditForm Model="_editing" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Name</label>
+                    <InputText class="input" @bind-Value="_editing.Name" />
+                </div>
+                <div class="field">
+                    <label>Floor</label>
+                    <InputText class="input" @bind-Value="_editing.Floor" />
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div class="field">
+                    <label>Seating Capacity</label>
+                    <InputNumber class="input" @bind-Value="_editing.SeatingCapacity" />
+                </div>
+                <div class="field">
+                    <label>Display Order</label>
+                    <InputNumber class="input" @bind-Value="_editing.DisplayOrder" />
+                </div>
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <InputTextArea class="input" rows="3" @bind-Value="_editing.Description" />
+            </div>
+            <div class="field">
+                <label>Photo</label>
+                @if (!string.IsNullOrWhiteSpace(_editing.ImageUrl))
+                {
+                    <img src="@_editing.ImageUrl" class="thumb-sm" style="margin-bottom:8px;" alt="" />
+                }
+                <InputFile OnChange="OnFileSelected" accept="image/*" />
+                @if (_uploading) { <span class="gc-text-muted"> Uploading...</span> }
+            </div>
+            <div class="field">
+                <label><InputCheckbox @bind-Value="_editing.IsPublished" /> Published</label>
+            </div>
+            <div class="gc-row gap-sm">
+                <button type="submit" class="gc-btn gc-btn-primary">Save</button>
+                <button type="button" class="icon-btn" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
+    </div>
+}
+
+<table class="admin-table">
+    <thead>
+        <tr><th>Photo</th><th>Name</th><th>Floor</th><th>Capacity</th><th>Published</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var hall in _halls)
+        {
+            <tr>
+                <td>
+                    @if (!string.IsNullOrWhiteSpace(hall.ImageUrl))
+                    {
+                        <img src="@hall.ImageUrl" class="thumb-sm" alt="" />
+                    }
+                </td>
+                <td>@hall.Name</td>
+                <td>@hall.Floor</td>
+                <td>@hall.SeatingCapacity</td>
+                <td>@(hall.IsPublished ? "Yes" : "No")</td>
+                <td class="actions">
+                    <button class="icon-btn" @onclick="() => Edit(hall)">Edit</button>
+                    <button class="icon-btn danger" @onclick="() => Delete(hall.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Hall> _halls = [];
+    private Hall? _editing;
+    private bool _uploading;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _halls = await db.Halls.OrderBy(h => h.DisplayOrder).ToListAsync();
+    }
+
+    private void NewHall() => _editing = new Hall { DisplayOrder = _halls.Count + 1 };
+    private void Edit(Hall hall) => _editing = new Hall
+    {
+        Id = hall.Id, Name = hall.Name, Description = hall.Description, SeatingCapacity = hall.SeatingCapacity,
+        Floor = hall.Floor, ImageUrl = hall.ImageUrl, DisplayOrder = hall.DisplayOrder, IsPublished = hall.IsPublished
+    };
+    private void Cancel() => _editing = null;
+
+    private async Task OnFileSelected(Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs e)
+    {
+        if (_editing is null) return;
+        _uploading = true;
+        try
+        {
+            _editing.ImageUrl = await ImageUpload.SaveAsync(e.File);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (_editing is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        if (_editing.Id == 0)
+        {
+            db.Halls.Add(_editing);
+        }
+        else
+        {
+            db.Halls.Update(_editing);
+        }
+
+        await db.SaveChangesAsync();
+        _editing = null;
+        await Load();
+    }
+
+    private async Task Delete(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        await db.Halls.Where(h => h.Id == id).ExecuteDeleteAsync();
+        await Load();
+    }
+}

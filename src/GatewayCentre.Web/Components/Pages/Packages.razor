@@ -1,0 +1,66 @@
+@page "/packages"
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Packages — Gateway Centre</PageTitle>
+
+<section class="page-hero">
+    <div class="gc-container">
+        <span class="section-eyebrow" style="background:rgba(255,255,255,.16);color:#fff;">Packages &amp; Pricing</span>
+        <h1 style="color:#fff;">Find the Right Package</h1>
+        <OrnamentDivider Light="true" />
+        <p style="color:rgba(255,255,255,.85);max-width:560px;">Starting prices shown below — every event is unique, so request a quote for exact pricing based on your date and guest count.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="gc-container">
+        <div class="grid grid-3">
+            @foreach (var package in _packages)
+            {
+                <div class="gc-card hoverable @(package.IsFeatured ? "featured-card" : "")">
+                    <div class="gc-card-body">
+                        @if (package.IsFeatured)
+                        {
+                            <span class="gc-badge gold">Most Popular</span>
+                        }
+                        <h3 style="margin-top:10px;">@package.Name</h3>
+                        <p class="gc-text-muted">@package.Description</p>
+                        <p class="price">Rs. @package.StartingPriceRs.ToString("N0") <span>starting</span></p>
+                        <ul class="feature-list">
+                            @foreach (var feature in package.Features)
+                            {
+                                <li>@feature</li>
+                            }
+                        </ul>
+                        <a href="/request-a-quote?packageId=@package.Id" class="gc-btn gc-btn-primary gc-btn-block">Request This Package</a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (_packages.Count == 0)
+        {
+            <p class="gc-text-muted">Packages will be published here shortly.</p>
+        }
+
+        <div class="gc-card" style="margin-top:48px;">
+            <div class="gc-card-body gc-row gap-md wrap" style="justify-content:space-between;">
+                <div>
+                    <h3>Need something custom?</h3>
+                    <p class="gc-text-muted gc-mt-0">Tell us your guest count, date and budget — we'll put together a tailored quote.</p>
+                </div>
+                <a href="/request-a-quote" class="gc-btn gc-btn-primary">Request a Custom Quote</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<Package> _packages = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _packages = await db.Packages.Where(p => p.IsPublished).OrderBy(p => p.DisplayOrder).ToListAsync();
+    }
+}
