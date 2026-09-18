@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components.Forms;
 
 namespace GatewayCentre.Web.Services;
 
-public class ImageUploadService(IWebHostEnvironment env)
+public class ImageUploadService(IConfiguration configuration, IWebHostEnvironment env)
 {
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -11,7 +11,7 @@ public class ImageUploadService(IWebHostEnvironment env)
 
     private const long MaxBytes = 8 * 1024 * 1024;
 
-    /// <summary>Saves an uploaded image under wwwroot/uploads and returns its public relative URL.</summary>
+    /// <summary>Saves an uploaded image to the resolved uploads path and returns its public relative URL.</summary>
     public async Task<string> SaveAsync(IBrowserFile file)
     {
         if (!AllowedContentTypes.Contains(file.ContentType))
@@ -19,7 +19,7 @@ public class ImageUploadService(IWebHostEnvironment env)
             throw new InvalidOperationException("Only JPG, PNG, WEBP or GIF images are allowed.");
         }
 
-        var uploadsDir = Path.Combine(env.WebRootPath, "uploads");
+        var uploadsDir = StoragePaths.ResolveUploadsPath(configuration, env);
         Directory.CreateDirectory(uploadsDir);
 
         var extension = Path.GetExtension(file.Name) is { Length: > 0 } ext ? ext : ".jpg";

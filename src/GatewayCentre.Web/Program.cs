@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using GatewayCentre.Web.Components;
 using GatewayCentre.Web.Components.Account;
 using GatewayCentre.Web.Data;
@@ -8,8 +10,8 @@ using GatewayCentre.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
-Directory.CreateDirectory(Path.Combine(builder.Environment.WebRootPath, "uploads"));
+var uploadsPath = StoragePaths.ResolveUploadsPath(builder.Configuration, builder.Environment);
+Directory.CreateDirectory(uploadsPath);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -32,6 +34,11 @@ builder.Services.AddAuthorization(options =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var dbDirectory = Path.GetDirectoryName(new SqliteConnectionStringBuilder(connectionString).DataSource);
+if (!string.IsNullOrEmpty(dbDirectory))
+{
+    Directory.CreateDirectory(Path.IsPathRooted(dbDirectory) ? dbDirectory : Path.Combine(builder.Environment.ContentRootPath, dbDirectory));
+}
 // Blazor Server components resolve their own short-lived context from the factory to avoid
 // concurrent use of a single scoped DbContext across simultaneously-rendering components.
 // The scoped ApplicationDbContext registration below (required by Identity) is served from the
@@ -80,6 +87,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+// Serves admin-uploaded images from their resolved storage path (which may live outside the
+// deployed app folder in production — see StoragePaths), independent of the build-time static
+// asset manifest that MapStaticAssets below handles for the app's own bundled wwwroot content.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
